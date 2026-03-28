@@ -59,37 +59,39 @@
 ## 📁 项目结构
 
 ```
-project_root/
-├── configs/
-│   └── config.yaml           # 配置文件
-├── data/                     # 数据集目录（自动下载）
-├── outputs/
-│   ├── models/               # 保存的模型检查点
-│   │   ├── centralized.pt
-│   │   └── federated.pt
-│   ├── plots/                # 生成的可视化图表
-│   │   ├── centralized_confusion_matrix.png
-│   │   ├── federated_confusion_matrix.png
-│   │   ├── centralized_training_curves.png
-│   │   ├── federated_training_curves.png
-│   │   └── model_comparison.png
-│   └── logs/                 # 训练日志和指标
-├── src/
-│   ├── data_loader.py        # 数据加载和客户端划分
-│   ├── preprocess.py         # 文本预处理和词汇表
-│   ├── model.py              # 神经网络模型
-│   ├── train_centralized.py  # 集中式训练脚本
-│   ├── train_federated.py    # 联邦学习训练脚本
-│   ├── client.py             # 联邦客户端实现
-│   ├── server.py             # 联邦服务器实现
-│   ├── evaluate.py           # 评估和可视化
-│   └── utils.py              # 工具函数
-├── environment.yml           # Conda 环境配置
-├── requirements.txt          # pip 依赖
-├── .gitignore                # Git 忽略文件
-├── README.md                  # 英文说明文档
-└── README_CN.md               # 中文说明文档
+IMDB/
+├── project_root/
+│   ├── configs/
+│   │   └── config.yaml               # 配置文件
+│   ├── src/
+│   │   ├── __init__.py
+│   │   ├── data_loader.py            # 数据加载与划分
+│   │   ├── preprocess.py             # 文本预处理与词汇表
+│   │   ├── model.py                  # 模型定义
+│   │   ├── train_centralized.py      # 集中式训练
+│   │   ├── train_federated.py        # 联邦训练
+│   │   ├── client.py                 # 联邦客户端逻辑
+│   │   ├── server.py                 # 联邦服务器与聚合
+│   │   ├── evaluate.py               # 评估与可视化
+│   │   └── utils.py                  # 工具函数
+│   ├── outputs/                      # 运行产物（Git 忽略）
+│   │   ├── models/
+│   │   ├── logs/
+│   │   └── plots/
+│   ├── data/                         # 数据缓存（Git 忽略）
+│   ├── requirements.txt
+│   ├── environment.yml
+│   ├── .gitignore                    # 项目级忽略规则
+│   ├── README.md
+│   └── README_CN.md
+├── outputs/                          # 仓库根目录历史产物（已忽略）
+└── .gitignore                        # 仓库级忽略规则（用于 GH 同步）
 ```
+
+GitHub 同步建议：
+- 只提交源码、配置和文档。
+- 不要提交 `outputs/`、`data/`、模型权重等生成文件。
+- 统一在 `project_root` 目录执行脚本，避免产物分散到多个路径。
 
 ## 🚀 快速开始
 

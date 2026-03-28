@@ -1,0 +1,11 @@
+# Local editor settings
+.vscode/
+
+# OS files
+.DS_Store
+
+# Legacy runtime outputs at repository root
+outputs/
+
+# Python cache files anywhere in repository
+**/__pycache__/

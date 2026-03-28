@@ -59,37 +59,39 @@ This project implements an end-to-end sentiment classification system for IMDB m
 ## 📁 Project Structure
 
 ```
-project_root/
-├── configs/
-│   └── config.yaml           # Configuration file
-├── data/                     # Dataset directory (auto-downloaded)
-├── outputs/
-│   ├── models/               # Saved model checkpoints
-│   │   ├── centralized.pt
-│   │   └── federated.pt
-│   ├── plots/                # Generated visualizations
-│   │   ├── centralized_confusion_matrix.png
-│   │   ├── federated_confusion_matrix.png
-│   │   ├── centralized_training_curves.png
-│   │   ├── federated_training_curves.png
-│   │   └── model_comparison.png
-│   └── logs/                 # Training logs and metrics
-├── src/
-│   ├── data_loader.py        # Dataset loading and client splitting
-│   ├── preprocess.py         # Text preprocessing and vocabulary
-│   ├── model.py              # Neural network models
-│   ├── train_centralized.py  # Centralized training script
-│   ├── train_federated.py    # Federated learning script
-│   ├── client.py             # Federated client implementation
-│   ├── server.py             # Federated server implementation
-│   ├── evaluate.py           # Evaluation and visualization
-│   └── utils.py              # Utility functions
-├── environment.yml           # Conda environment specification
-├── requirements.txt          # pip dependencies
-├── .gitignore                # Git ignore file
-├── README.md                  # This file
-└── README_CN.md              # Chinese version
+IMDB/
+├── project_root/
+│   ├── configs/
+│   │   └── config.yaml               # Configuration file
+│   ├── src/
+│   │   ├── __init__.py
+│   │   ├── data_loader.py            # Dataset loading and split logic
+│   │   ├── preprocess.py             # Text preprocessing and vocabulary
+│   │   ├── model.py                  # Model definitions
+│   │   ├── train_centralized.py      # Centralized training
+│   │   ├── train_federated.py        # Federated training
+│   │   ├── client.py                 # FL client logic
+│   │   ├── server.py                 # FL server and aggregation
+│   │   ├── evaluate.py               # Evaluation and plotting
+│   │   └── utils.py                  # Utility helpers
+│   ├── outputs/                      # Runtime artifacts (ignored by Git)
+│   │   ├── models/
+│   │   ├── logs/
+│   │   └── plots/
+│   ├── data/                         # Downloaded dataset cache (ignored by Git)
+│   ├── requirements.txt
+│   ├── environment.yml
+│   ├── .gitignore                    # Project-level ignore rules
+│   ├── README.md
+│   └── README_CN.md
+├── outputs/                          # Legacy local outputs at repo root (ignored)
+└── .gitignore                        # Repo-level ignore rules for GitHub sync
 ```
+
+Notes for GitHub sync:
+- Commit source/config/docs only.
+- Do not commit generated artifacts in `outputs/`, `data/`, or model checkpoints.
+- Always run commands from `project_root` to keep outputs in one place.
 
 ## 🚀 Getting Started
 
