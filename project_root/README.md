@@ -59,39 +59,36 @@ This project implements an end-to-end sentiment classification system for IMDB m
 ## 📁 Project Structure
 
 ```
-IMDB/
-├── project_root/
-│   ├── configs/
-│   │   └── config.yaml               # Configuration file
-│   ├── src/
-│   │   ├── __init__.py
-│   │   ├── data_loader.py            # Dataset loading and split logic
-│   │   ├── preprocess.py             # Text preprocessing and vocabulary
-│   │   ├── model.py                  # Model definitions
-│   │   ├── train_centralized.py      # Centralized training
-│   │   ├── train_federated.py        # Federated training
-│   │   ├── client.py                 # FL client logic
-│   │   ├── server.py                 # FL server and aggregation
-│   │   ├── evaluate.py               # Evaluation and plotting
-│   │   └── utils.py                  # Utility helpers
-│   ├── outputs/                      # Runtime artifacts (ignored by Git)
-│   │   ├── models/
-│   │   ├── logs/
-│   │   └── plots/
-│   ├── data/                         # Downloaded dataset cache (ignored by Git)
-│   ├── requirements.txt
-│   ├── environment.yml
-│   ├── .gitignore                    # Project-level ignore rules
-│   ├── README.md
-│   └── README_CN.md
-├── outputs/                          # Legacy local outputs at repo root (ignored)
-└── .gitignore                        # Repo-level ignore rules for GitHub sync
+project_root/
+├── configs/
+│   └── config.yaml               # Configuration file
+├── src/
+│   ├── __init__.py
+│   ├── data_loader.py            # Dataset loading and split logic
+│   ├── preprocess.py             # Text preprocessing and vocabulary
+│   ├── model.py                  # Model definitions
+│   ├── train_centralized.py      # Centralized training
+│   ├── train_federated.py        # Federated training
+│   ├── client.py                 # FL client logic
+│   ├── server.py                 # FL server and aggregation
+│   ├── evaluate.py               # Evaluation and plotting
+│   └── utils.py                  # Utility helpers
+├── outputs/                      # Runtime artifacts (ignored by Git)
+│   ├── models/
+│   ├── logs/
+│   └── plots/
+├── data/                         # Downloaded dataset cache (ignored by Git)
+├── requirements.txt
+├── environment.yml
+├── .gitignore
+├── README.md
+└── README_CN.md
 ```
 
 Notes for GitHub sync:
 - Commit source/config/docs only.
 - Do not commit generated artifacts in `outputs/`, `data/`, or model checkpoints.
-- Always run commands from `project_root` to keep outputs in one place.
+- If your repository root is one level above `project_root`, keep a root `.gitignore` as well.
 
 ## 🚀 Getting Started
 
