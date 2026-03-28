@@ -1,0 +1,21 @@
+name: fl_imdb
+channels:
+  - pytorch
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.10
+  - pytorch
+  - torchvision
+  - pip
+  - pip:
+    - datasets
+    - torchtext
+    - scikit-learn
+    - matplotlib
+    - seaborn
+    - pandas
+    - tqdm
+    - nltk
+    - pyyaml
+    - numpy
