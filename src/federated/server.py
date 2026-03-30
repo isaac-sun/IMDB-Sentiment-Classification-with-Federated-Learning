@@ -8,10 +8,6 @@ The server:
 3. Aggregates client updates using FedAvg
 """
 
-import sys
-import os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
 import torch
 import copy
 from tqdm import tqdm

@@ -7,10 +7,6 @@ This module provides evaluation functionality:
 - Visualization (plots, curves)
 """
 
-import sys
-import os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
 import torch
 import torch.nn as nn
 import numpy as np
@@ -20,12 +16,16 @@ from sklearn.metrics import confusion_matrix, classification_report
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 import json
+import os
+import sys
 
-from model import LSTMClassifier
-from utils import load_config, calculate_metrics, print_metrics
-from train_centralized import IMDBDataset, collate_batch
-from preprocess import TextPreprocessor, VocabularyBuilder, download_nltk_resources
-from data_loader import download_imdb_dataset
+# Add parent directory to path to import src modules
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from src.models import LSTMClassifier
+from src.utils import load_config, calculate_metrics, print_metrics
+from src.training.centralized import IMDBDataset, collate_batch
+from src.data import TextPreprocessor, VocabularyBuilder, download_nltk_resources, download_imdb_dataset
 
 
 def find_artifact_path(filename, search_dirs):

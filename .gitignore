@@ -4,8 +4,34 @@
 # OS files
 .DS_Store
 
-# Legacy runtime outputs at repository root
-outputs/
-
-# Python cache files anywhere in repository
+# Python cache files
 **/__pycache__/
+**/*.pyc
+**/*.pyo
+
+# Runtime outputs
+outputs/
+data/
+
+# Jupyter notebooks (optional)
+**/.ipynb_checkpoints/
+
+# Environment
+.env
+.venv
+venv/
+env/
+
+# IDE
+.idea/
+*.swp
+*.swo
+*~
+
+# Model checkpoints (backup)
+*.pt
+*.pth
+*.ckpt
+
+# Logs
+*.log

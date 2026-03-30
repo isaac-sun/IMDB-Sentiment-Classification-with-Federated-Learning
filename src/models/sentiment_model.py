@@ -6,10 +6,6 @@ This module implements neural network models for sentiment classification:
 2. LSTMClassifier: LSTM-based classifier for better sequence understanding
 """
 
-import sys
-import os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
 import torch
 import torch.nn as nn
 import torch.nn.functional as F

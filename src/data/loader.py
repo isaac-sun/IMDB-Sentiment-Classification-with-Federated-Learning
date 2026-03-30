@@ -5,10 +5,6 @@ This module handles loading and initial processing of the IMDB dataset
 from HuggingFace datasets library.
 """
 
-import sys
-import os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
 from datasets import load_dataset
 import torch
 from torch.utils.data import DataLoader, TensorDataset

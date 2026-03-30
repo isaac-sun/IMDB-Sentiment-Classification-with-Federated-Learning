@@ -8,18 +8,19 @@ Each client:
 3. Returns updated weights to the server
 """
 
-import sys
-import os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
 import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader, TensorDataset
 from tqdm import tqdm
 import numpy as np
+import os
+import sys
 
-from utils import AverageMeter, calculate_metrics
+# Add parent directory to path to import src modules
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from src.utils import AverageMeter, calculate_metrics
 
 
 class FederatedClient:

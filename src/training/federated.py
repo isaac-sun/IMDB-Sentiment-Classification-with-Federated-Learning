@@ -5,10 +5,6 @@ This script implements the FedAvg algorithm for training an LSTM model
 on IMDB reviews in a federated manner across multiple clients.
 """
 
-import sys
-import os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -17,14 +13,17 @@ from tqdm import tqdm
 import numpy as np
 import copy
 import json
+import os
+import sys
 
-from data_loader import download_imdb_dataset, split_dataset, create_client_datasets
-from preprocess import TextPreprocessor, VocabularyBuilder, download_nltk_resources
-from model import LSTMClassifier
-from server import FederatedServer, fedavg_aggregate
-from client import FederatedClient
-from train_centralized import IMDBDataset, collate_batch
-from utils import (
+# Add parent directory to path to import src modules
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from src.data import download_imdb_dataset, split_dataset, create_client_datasets, TextPreprocessor, VocabularyBuilder, download_nltk_resources
+from src.models import LSTMClassifier
+from src.federated import FederatedServer, fedavg_aggregate, FederatedClient
+from src.training.centralized import IMDBDataset, collate_batch
+from src.utils import (
     set_seed, load_config, save_model, save_metrics,
     create_output_dirs, calculate_metrics, print_metrics,
     AverageMeter, get_timestamp

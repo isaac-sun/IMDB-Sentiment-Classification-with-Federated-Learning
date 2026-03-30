@@ -10,10 +10,6 @@ This module handles text preprocessing including:
 - Sequence padding
 """
 
-import sys
-import os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
 import re
 import string
 from collections import Counter

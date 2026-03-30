@@ -5,21 +5,21 @@ This script trains an LSTM model on the full IMDB training dataset
 in a centralized manner for comparison with federated learning.
 """
 
-import sys
-import os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
 import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader, TensorDataset
 from tqdm import tqdm
 import numpy as np
+import os
+import sys
 
-from data_loader import download_imdb_dataset, split_dataset
-from preprocess import TextPreprocessor, VocabularyBuilder, download_nltk_resources
-from model import LSTMClassifier
-from utils import (
+# Add parent directory to path to import src modules
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from src.data import download_imdb_dataset, split_dataset, TextPreprocessor, VocabularyBuilder, download_nltk_resources
+from src.models import LSTMClassifier
+from src.utils import (
     set_seed, load_config, save_model, save_metrics, 
     create_output_dirs, calculate_metrics, print_metrics,
     AverageMeter, get_timestamp
