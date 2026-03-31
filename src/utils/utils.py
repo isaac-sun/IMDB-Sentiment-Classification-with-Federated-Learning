@@ -8,6 +8,7 @@ This module provides utility functions for:
 - Metrics calculation
 """
 
+import os
 import random
 import numpy as np
 import torch

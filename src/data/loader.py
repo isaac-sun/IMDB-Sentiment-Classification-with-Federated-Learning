@@ -6,8 +6,6 @@ from HuggingFace datasets library.
 """
 
 from datasets import load_dataset
-import torch
-from torch.utils.data import DataLoader, TensorDataset
 from sklearn.model_selection import train_test_split
 import numpy as np
 from tqdm import tqdm
@@ -113,7 +111,7 @@ def create_client_datasets(train_data, num_clients=5, alpha=0.5, seed=42):
     pos_indices = [i for i, l in enumerate(labels) if l == 1]
     neg_indices = [i for i, l in enumerate(labels) if l == 0]
     
-    #分配正类样本
+    # Distribute positive-class samples
     pos_per_client = (class_proportions[1] * len(pos_indices)).astype(int)
     pos_per_client = np.maximum(pos_per_client, 1)  # Ensure at least 1 sample
     
@@ -127,7 +125,7 @@ def create_client_datasets(train_data, num_clients=5, alpha=0.5, seed=42):
     np.random.shuffle(pos_indices)
     np.random.shuffle(neg_indices)
     
-    #分配正样本
+    # Assign positive samples to clients
     start_idx = 0
     for client_id in range(num_clients):
         end_idx = start_idx + pos_per_client[client_id]
@@ -137,7 +135,7 @@ def create_client_datasets(train_data, num_clients=5, alpha=0.5, seed=42):
             client_labels[client_id].append(labels[idx])
         start_idx = end_idx
     
-    #分配负样本
+    # Distribute and assign negative-class samples
     neg_per_client = (class_proportions[0] * len(neg_indices)).astype(int)
     neg_per_client = np.maximum(neg_per_client, 1)
     
@@ -176,51 +174,6 @@ def create_client_datasets(train_data, num_clients=5, alpha=0.5, seed=42):
               f"(Pos: {n_pos} ({pos_ratio:.1f}%), Neg: {n_neg})")
     
     return client_texts, client_labels, client_sizes
-
-
-def get_data_loaders(texts, labels, vocab, max_seq_length, batch_size, shuffle=True):
-    """
-    Create DataLoader from texts and labels.
-    
-    Args:
-        texts: List of text strings
-        labels: List of labels (0 or 1)
-        vocab: Vocabulary dictionary
-        max_seq_length: Maximum sequence length
-        batch_size: Batch size
-        shuffle: Whether to shuffle data
-    
-    Returns:
-        DataLoader: PyTorch DataLoader
-    """
-    # Tokenize and encode texts
-    indices = []
-    lengths = []
-    
-    for text in tqdm(texts, desc="Tokenizing"):
-        # Simple tokenization
-        tokens = text.lower().split()
-        # Convert to indices
-        encoded = [vocab.get(token, vocab['<unk>']) for token in tokens]
-        # Truncate or pad
-        if len(encoded) > max_seq_length:
-            encoded = encoded[:max_seq_length]
-        else:
-            encoded = encoded + [vocab['<pad>']] * (max_seq_length - len(encoded))
-        
-        indices.append(encoded)
-        lengths.append(min(len(tokens), max_seq_length))
-    
-    # Convert to tensors
-    indices = torch.tensor(indices, dtype=torch.long)
-    lengths = torch.tensor(lengths, dtype=torch.long)
-    labels = torch.tensor(labels, dtype=torch.float)
-    
-    # Create dataset and dataloader
-    dataset = TensorDataset(indices, lengths, labels)
-    dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=shuffle)
-    
-    return dataloader
 
 
 if __name__ == "__main__":

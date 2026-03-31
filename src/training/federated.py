@@ -12,17 +12,19 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 import numpy as np
 import copy
-import json
 import os
 import sys
 
-# Add parent directory to path to import src modules
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# Add project root to path so the package can be imported when run directly
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-from src.data import download_imdb_dataset, split_dataset, create_client_datasets, TextPreprocessor, VocabularyBuilder, download_nltk_resources
+from src.data import (
+    download_imdb_dataset, split_dataset, create_client_datasets,
+    TextPreprocessor, VocabularyBuilder, download_nltk_resources,
+    IMDBDataset, collate_batch,
+)
 from src.models import LSTMClassifier
 from src.federated import FederatedServer, fedavg_aggregate, FederatedClient
-from src.training.centralized import IMDBDataset, collate_batch
 from src.utils import (
     set_seed, load_config, save_model, save_metrics,
     create_output_dirs, calculate_metrics, print_metrics,
@@ -175,40 +177,44 @@ def evaluate_global_model(model, testloader, criterion, device):
 
 def main():
     """Main federated learning training function."""
-    # Configuration
-    config_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'configs', 'config.yaml')
+    # Resolve project root so the script can be run from any working directory
+    project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    config_path = os.path.join(project_root, 'configs', 'config.yaml')
     config = load_config(config_path)
-    
+
     # Set random seed
     set_seed(config['seed'])
-    
+
     # Create output directories
     output_dir, plots_dir, logs_dir = create_output_dirs(config)
-    
+
     # Device configuration
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(f"\nUsing device: {device}")
-    
+
     # Download NLTK resources
     download_nltk_resources()
-    
+
     # Download and prepare data
     print("\n" + "=" * 60)
     print("LOADING AND PREPARING DATA FOR FEDERATED LEARNING")
     print("=" * 60)
-    
+
     train_dataset, test_dataset = download_imdb_dataset()
     train_dataset, val_dataset = split_dataset(train_dataset, val_split=config['data']['val_split'])
-    
+
     # Extract texts and labels
     train_texts = [example['text'] for example in train_dataset]
     train_labels = [example['label'] for example in train_dataset]
-    
+
+    val_texts = [example['text'] for example in val_dataset]
+    val_labels = [example['label'] for example in val_dataset]
+
     test_texts = [example['text'] for example in test_dataset]
     test_labels = [example['label'] for example in test_dataset]
-    
+
     print(f"\nTotal training samples: {len(train_texts)}")
-    
+
     # Create non-IID client data distributions
     client_texts, client_labels, client_sizes = create_client_datasets(
         train_dataset,
@@ -216,20 +222,30 @@ def main():
         alpha=config['federated']['alpha'],
         seed=config['seed']
     )
-    
+
     # Preprocessing
     print("\n" + "=" * 60)
     print("PREPROCESSING DATA")
     print("=" * 60)
-    
+
     preprocessor = TextPreprocessor(use_stopwords=True)
-    
+
     # Build vocabulary (using all training data)
     vocab_builder = VocabularyBuilder(max_vocab_size=config['data']['max_vocab_size'])
     vocab_builder.build_vocab(train_texts)
     vocab = vocab_builder
-    
-    # Create test dataset
+
+    # Create validation dataset (used for best-model selection — no data leakage)
+    val_ds = IMDBDataset(
+        val_texts, val_labels, vocab,
+        config['data']['max_seq_length'], preprocessor
+    )
+    valloader = DataLoader(
+        val_ds, batch_size=config['evaluation']['batch_size'],
+        shuffle=False, collate_fn=collate_batch
+    )
+
+    # Create test dataset (only touched for final evaluation)
     test_ds = IMDBDataset(
         test_texts, test_labels, vocab,
         config['data']['max_seq_length'], preprocessor
@@ -238,12 +254,12 @@ def main():
         test_ds, batch_size=config['evaluation']['batch_size'],
         shuffle=False, collate_fn=collate_batch
     )
-    
+
     # Initialize model
     print("\n" + "=" * 60)
     print("INITIALIZING MODEL")
     print("=" * 60)
-    
+
     model = LSTMClassifier(
         vocab_size=len(vocab.vocab),
         embedding_dim=config['model']['embedding_dim'],
@@ -252,18 +268,18 @@ def main():
         dropout=config['model']['dropout'],
         bidirectional=config['model']['bidirectional']
     )
-    
+
     total_params = sum(p.numel() for p in model.parameters())
     print(f"Total parameters: {total_params:,}")
-    
+
     # Create server
     server = FederatedServer(model, config, device)
-    
+
     # Create clients
     print("\n" + "=" * 60)
     print("CREATING FEDERATED CLIENTS")
     print("=" * 60)
-    
+
     clients = create_clients(
         model=model,
         client_texts=client_texts,
@@ -274,94 +290,94 @@ def main():
         config=config,
         device=device
     )
-    
+
     # Training loop
     print("\n" + "=" * 60)
     print("STARTING FEDERATED TRAINING")
     print("=" * 60)
-    
+
     criterion = nn.BCEWithLogitsLoss()
-    
+
     history = {
         'rounds': [],
         'avg_client_loss': [],
         'avg_client_acc': [],
         'avg_client_f1': [],
-        'test_loss': [],
-        'test_acc': [],
-        'test_f1': []
+        'val_loss': [],
+        'val_acc': [],
+        'val_f1': [],
     }
-    
-    best_test_f1 = 0.0
-    
+
+    best_val_f1 = 0.0
+
     for round_num in range(1, config['federated']['global_rounds'] + 1):
         print(f"\n{'='*60}")
         print(f"FEDERATED ROUND {round_num}/{config['federated']['global_rounds']}")
         print(f"{'='*60}")
-        
+
         # Execute federated training round
         round_metrics = federated_training_round(server, clients)
-        
+
         # Log round metrics
         server.log_round(round_num, round_metrics)
-        
-        # Evaluate global model on test set
-        test_metrics = evaluate_global_model(
-            server.global_model, testloader, criterion, device
+
+        # Evaluate global model on validation set (not test set) for model selection
+        val_metrics = evaluate_global_model(
+            server.global_model, valloader, criterion, device
         )
-        
-        print(f"\n  Global Model Test Metrics:")
-        print(f"    Test Loss: {test_metrics['loss']:.4f}")
-        print(f"    Test Acc:  {test_metrics['accuracy']:.4f}")
-        print(f"    Test F1:   {test_metrics['f1']:.4f}")
-        
+
+        print(f"\n  Global Model Val Metrics:")
+        print(f"    Val Loss: {val_metrics['loss']:.4f}")
+        print(f"    Val Acc:  {val_metrics['accuracy']:.4f}")
+        print(f"    Val F1:   {val_metrics['f1']:.4f}")
+
         # Record history
         history['rounds'].append(round_num)
         history['avg_client_loss'].append(round_metrics['avg_loss'])
         history['avg_client_acc'].append(round_metrics['avg_acc'])
         history['avg_client_f1'].append(round_metrics['avg_f1'])
-        history['test_loss'].append(test_metrics['loss'])
-        history['test_acc'].append(test_metrics['accuracy'])
-        history['test_f1'].append(test_metrics['f1'])
-        
-        # Save best model
-        if test_metrics['f1'] > best_test_f1:
-            best_test_f1 = test_metrics['f1']
+        history['val_loss'].append(val_metrics['loss'])
+        history['val_acc'].append(val_metrics['accuracy'])
+        history['val_f1'].append(val_metrics['f1'])
+
+        # Save best model based on validation F1 (avoids test-set data leakage)
+        if val_metrics['f1'] > best_val_f1:
+            best_val_f1 = val_metrics['f1']
             model_path = os.path.join(output_dir, 'federated.pt')
             save_model(server.global_model, model_path)
-            print(f"  Best model saved! F1: {best_test_f1:.4f}")
-    
-    # Final evaluation
+            print(f"  Best model saved! Val F1: {best_val_f1:.4f}")
+
+    # Final evaluation on held-out test set
     print("\n" + "=" * 60)
     print("FINAL EVALUATION")
     print("=" * 60)
-    
+
     # Load best model
     server.global_model.load_state_dict(
-        torch.load(os.path.join(output_dir, 'federated.pt'))
+        torch.load(os.path.join(output_dir, 'federated.pt'), weights_only=True)
     )
-    
+
     final_metrics = evaluate_global_model(
         server.global_model, testloader, criterion, device
     )
     print_metrics(final_metrics, prefix="Final Test ")
-    
+
     # Save final metrics
     final_results = {
         'test_metrics': final_metrics,
-        'best_test_f1': best_test_f1,
+        'best_val_f1': best_val_f1,
         'history': history,
         'config': config,
         'client_sizes': client_sizes
     }
     save_metrics(final_results, os.path.join(logs_dir, 'federated_metrics.json'))
-    
+
     print("\n" + "=" * 60)
     print("FEDERATED TRAINING COMPLETE")
     print("=" * 60)
     print(f"Model saved to: {os.path.join(output_dir, 'federated.pt')}")
     print(f"Metrics saved to: {os.path.join(logs_dir, 'federated_metrics.json')}")
-    
+
     return history, final_metrics
 
 

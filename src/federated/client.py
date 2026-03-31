@@ -11,14 +11,8 @@ Each client:
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torch.utils.data import DataLoader, TensorDataset
 from tqdm import tqdm
 import numpy as np
-import os
-import sys
-
-# Add parent directory to path to import src modules
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from src.utils import AverageMeter, calculate_metrics
 
@@ -159,53 +153,6 @@ class FederatedClient:
         metrics = calculate_metrics(np.array(all_preds), np.array(all_targets))
         
         return metrics
-
-
-def create_client(model, client_texts, client_labels, vocab, max_seq_length, 
-                  batch_size, config, device, client_id):
-    """
-    Factory function to create a federated client.
-    
-    Args:
-        model: PyTorch model template
-        client_texts: List of texts for this client
-        client_labels: List of labels for this client
-        vocab: Vocabulary builder
-        max_seq_length: Maximum sequence length
-        batch_size: Batch size for DataLoader
-        config: Configuration dictionary
-        device: Device to train on
-        client_id: Client ID
-    
-    Returns:
-        FederatedClient: Initialized client
-    """
-    # Create dataset
-    from train_centralized import IMDBDataset, collate_batch
-    from preprocess import TextPreprocessor
-    
-    preprocessor = TextPreprocessor(use_stopwords=True)
-    
-    dataset = IMDBDataset(
-        client_texts, client_labels, vocab,
-        max_seq_length, preprocessor
-    )
-    
-    dataloader = DataLoader(
-        dataset, batch_size=batch_size,
-        shuffle=True, collate_fn=collate_batch
-    )
-    
-    # Create client
-    client = FederatedClient(
-        client_id=client_id,
-        model=model,
-        trainloader=dataloader,
-        config=config,
-        device=device
-    )
-    
-    return client
 
 
 if __name__ == "__main__":

@@ -21,10 +21,15 @@ from tqdm import tqdm
 # Download required NLTK data
 def download_nltk_resources():
     """Download required NLTK resources for text preprocessing."""
-    resources = ['stopwords', 'punkt', 'punkt_tab']
-    for resource in resources:
+    # punkt/punkt_tab live under tokenizers/, stopwords under corpora/
+    resource_paths = {
+        'stopwords': 'corpora/stopwords',
+        'punkt': 'tokenizers/punkt',
+        'punkt_tab': 'tokenizers/punkt_tab',
+    }
+    for resource, path in resource_paths.items():
         try:
-            nltk.data.find(f'corpora/{resource}')
+            nltk.data.find(path)
         except LookupError:
             print(f"Downloading NLTK resource: {resource}")
             nltk.download(resource, quiet=True)
@@ -240,33 +245,6 @@ class VocabularyBuilder:
                 idx = int(idx)
                 self.vocab[word] = idx
                 self.index_to_word.append(word)
-
-
-def prepare_data(train_texts, val_texts, test_texts, max_vocab_size=20000, max_seq_length=256):
-    """
-    Prepare data for training.
-    
-    Args:
-        train_texts: Training texts
-        val_texts: Validation texts
-        test_texts: Test texts
-        max_vocab_size: Maximum vocabulary size
-        max_seq_length: Maximum sequence length
-    
-    Returns:
-        vocab: Vocabulary dictionary
-        trainloader: Training DataLoader
-        valloader: Validation DataLoader
-        testloader: Test DataLoader
-    """
-    # Download NLTK resources
-    download_nltk_resources()
-    
-    # Build vocabulary
-    builder = VocabularyBuilder(max_vocab_size=max_vocab_size)
-    builder.build_vocab(train_texts)
-    
-    return builder
 
 
 if __name__ == "__main__":

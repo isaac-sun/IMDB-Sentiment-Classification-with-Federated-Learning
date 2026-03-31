@@ -19,13 +19,15 @@ import json
 import os
 import sys
 
-# Add parent directory to path to import src modules
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# Add project root to path so the package can be imported when run directly
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 from src.models import LSTMClassifier
 from src.utils import load_config, calculate_metrics, print_metrics
-from src.training.centralized import IMDBDataset, collate_batch
-from src.data import TextPreprocessor, VocabularyBuilder, download_nltk_resources, download_imdb_dataset
+from src.data import (
+    TextPreprocessor, VocabularyBuilder, download_nltk_resources,
+    download_imdb_dataset, IMDBDataset, collate_batch,
+)
 
 
 def find_artifact_path(filename, search_dirs):
@@ -72,7 +74,7 @@ def load_trained_model(model_path, config, vocab_size, device):
         bidirectional=config['model']['bidirectional']
     )
     
-    model.load_state_dict(torch.load(model_path, map_location=device))
+    model.load_state_dict(torch.load(model_path, map_location=device, weights_only=True))
     model = model.to(device)
     model.eval()
     
@@ -319,24 +321,16 @@ def plot_model_comparison(centralized_metrics, federated_metrics, save_path):
 
 def main():
     """Main evaluation function."""
-    # Configuration
-    config_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'configs', 'config.yaml')
+    # Resolve project root so the script can be run from any working directory
+    project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    config_path = os.path.join(project_root, 'configs', 'config.yaml')
     config = load_config(config_path)
-    
-    # Create output directories
-    project_root = os.path.dirname(os.path.dirname(__file__))
-    workspace_root = os.path.dirname(project_root)
 
+    # Create output directories
     output_dir = os.path.join(project_root, 'outputs')
     plots_dir = os.path.join(output_dir, 'plots')
-    model_search_dirs = [
-        os.path.join(project_root, 'outputs', 'models'),
-        os.path.join(workspace_root, 'outputs', 'models')
-    ]
-    log_search_dirs = [
-        os.path.join(project_root, 'outputs', 'logs'),
-        os.path.join(workspace_root, 'outputs', 'logs')
-    ]
+    model_search_dirs = [os.path.join(project_root, 'outputs', 'models')]
+    log_search_dirs = [os.path.join(project_root, 'outputs', 'logs')]
     
     os.makedirs(plots_dir, exist_ok=True)
     

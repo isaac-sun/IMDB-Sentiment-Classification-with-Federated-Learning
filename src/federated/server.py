@@ -10,7 +10,6 @@ The server:
 
 import torch
 import copy
-from tqdm import tqdm
 
 
 class FederatedServer:
@@ -69,40 +68,18 @@ class FederatedServer:
     def aggregate_weights(self, client_weights, client_sizes):
         """
         Aggregate client model weights using FedAvg.
-        
-        FedAvg (Federated Averaging):
-        w_global = sum_i (n_i / n_total) * w_i
-        
-        where n_i is the number of samples on client i.
-        
+
+        Delegates to the standalone :func:`fedavg_aggregate` function to
+        avoid duplicating aggregation logic.
+
         Args:
             client_weights: List of state dicts from clients
             client_sizes: List of dataset sizes for each client
-        
+
         Returns:
             Aggregated state dict
         """
-        total_samples = sum(client_sizes)
-        
-        # Initialize aggregated weights
-        aggregated_weights = copy.deepcopy(client_weights[0])
-        
-        # Zero out for proper weighted averaging
-        for key in aggregated_weights.keys():
-            aggregated_weights[key] = torch.zeros_like(aggregated_weights[key])
-        
-        # Weighted average
-        for client_weight, client_size in zip(client_weights, client_sizes):
-            weight_ratio = client_size / total_samples
-            
-            for key in client_weight.keys():
-                # Handle different tensor types
-                if isinstance(client_weight[key], torch.Tensor):
-                    aggregated_weights[key] += client_weight[key].float() * weight_ratio
-                else:
-                    aggregated_weights[key] += client_weight[key] * weight_ratio
-        
-        return aggregated_weights
+        return fedavg_aggregate(client_weights, client_sizes)
     
     def update_global_model(self, client_weights, client_sizes):
         """

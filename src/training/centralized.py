@@ -8,94 +8,26 @@ in a centralized manner for comparison with federated learning.
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torch.utils.data import DataLoader, TensorDataset
+from torch.utils.data import DataLoader
 from tqdm import tqdm
 import numpy as np
 import os
 import sys
 
-# Add parent directory to path to import src modules
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# Add project root to path so the package can be imported when run directly
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-from src.data import download_imdb_dataset, split_dataset, TextPreprocessor, VocabularyBuilder, download_nltk_resources
+from src.data import (
+    download_imdb_dataset, split_dataset,
+    TextPreprocessor, VocabularyBuilder, download_nltk_resources,
+    IMDBDataset, collate_batch,
+)
 from src.models import LSTMClassifier
 from src.utils import (
-    set_seed, load_config, save_model, save_metrics, 
+    set_seed, load_config, save_model, save_metrics,
     create_output_dirs, calculate_metrics, print_metrics,
     AverageMeter, get_timestamp
 )
-
-
-class IMDBDataset(torch.utils.data.Dataset):
-    """
-    Custom Dataset for IMDB reviews.
-    
-    Handles tokenization, encoding, and padding of text data.
-    """
-    
-    def __init__(self, texts, labels, vocab, max_seq_length, preprocessor):
-        """
-        Initialize dataset.
-        
-        Args:
-            texts: List of text strings
-            labels: List of labels (0 or 1)
-            vocab: Vocabulary dictionary
-            max_seq_length: Maximum sequence length
-            preprocessor: TextPreprocessor instance
-        """
-        self.texts = texts
-        self.labels = labels
-        self.vocab = vocab
-        self.max_seq_length = max_seq_length
-        self.preprocessor = preprocessor
-        
-        # Pre-tokenize all texts
-        print("Tokenizing texts...")
-        self.encoded_texts = []
-        self.lengths = []
-        
-        for text in tqdm(texts, desc="Encoding"):
-            tokens = self.preprocessor.preprocess(text)
-            indices = vocab.encode(tokens)
-            
-            # Truncate or pad
-            if len(indices) > max_seq_length:
-                indices = indices[:max_seq_length]
-                length = max_seq_length
-            else:
-                length = len(indices)
-                indices = indices + [vocab.vocab['<pad>']] * (max_seq_length - len(indices))
-            
-            self.encoded_texts.append(indices)
-            self.lengths.append(length)
-        
-    def __len__(self):
-        return len(self.texts)
-    
-    def __getitem__(self, idx):
-        return (
-            torch.tensor(self.encoded_texts[idx], dtype=torch.long),
-            torch.tensor(self.lengths[idx], dtype=torch.long),
-            torch.tensor(self.labels[idx], dtype=torch.float)
-        )
-
-
-def collate_batch(batch):
-    """
-    Custom collate function for DataLoader.
-    
-    Args:
-        batch: List of (text, length, label) tuples
-    
-    Returns:
-        Batched tensors
-    """
-    texts, lengths, labels = zip(*batch)
-    texts = torch.stack(texts)
-    lengths = torch.stack(lengths)
-    labels = torch.stack(labels)
-    return texts, lengths, labels
 
 
 def train_epoch(model, dataloader, optimizer, criterion, device):
@@ -185,8 +117,9 @@ def validate(model, dataloader, criterion, device):
 
 def main():
     """Main training function."""
-    # Configuration
-    config_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'configs', 'config.yaml')
+    # Resolve project root so the script can be run from any working directory
+    project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    config_path = os.path.join(project_root, 'configs', 'config.yaml')
     config = load_config(config_path)
     
     # Set random seed
@@ -352,7 +285,7 @@ def main():
     print("EVALUATING ON TEST SET")
     print("=" * 60)
     
-    model.load_state_dict(torch.load(os.path.join(output_dir, 'centralized.pt')))
+    model.load_state_dict(torch.load(os.path.join(output_dir, 'centralized.pt'), weights_only=True))
     test_metrics = validate(model, testloader, criterion, device)
     print_metrics(test_metrics, prefix="Test ")
     
