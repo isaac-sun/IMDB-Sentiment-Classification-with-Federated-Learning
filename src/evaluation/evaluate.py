@@ -26,7 +26,7 @@ from src.models import LSTMClassifier
 from src.utils import load_config, calculate_metrics, print_metrics
 from src.data import (
     TextPreprocessor, VocabularyBuilder, download_nltk_resources,
-    download_imdb_dataset, IMDBDataset, collate_batch,
+    download_imdb_dataset, split_dataset, IMDBDataset, collate_batch,
 )
 
 
@@ -344,6 +344,15 @@ def main():
     # Download dataset
     print("\nLoading dataset...")
     train_dataset, test_dataset = download_imdb_dataset()
+
+    # Match training pipeline exactly: build vocabulary from train split only.
+    # Using a different split source changes token->index mapping and can
+    # severely degrade loaded-model evaluation metrics.
+    train_dataset, _ = split_dataset(
+        train_dataset,
+        val_split=config['data']['val_split'],
+        seed=config['seed']
+    )
     
     # Build vocabulary
     print("\nBuilding vocabulary...")

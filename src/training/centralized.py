@@ -13,6 +13,7 @@ from tqdm import tqdm
 import numpy as np
 import os
 import sys
+from typing import Any, List, Mapping, Tuple, cast
 
 # Add project root to path so the package can be imported when run directly
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
@@ -28,6 +29,25 @@ from src.utils import (
     create_output_dirs, calculate_metrics, print_metrics,
     AverageMeter, get_timestamp
 )
+
+
+def extract_texts_labels(dataset: Any) -> Tuple[List[str], List[int]]:
+    """
+    Extract text/label pairs from a HuggingFace-style dataset with explicit typing.
+
+    Some static analyzers infer ambiguous iterator item types for external dataset
+    objects. Using index access plus a typed cast keeps runtime behavior unchanged
+    while avoiding false-positive type errors.
+    """
+    texts: List[str] = []
+    labels: List[int] = []
+
+    for i in range(len(dataset)):
+        example = cast(Mapping[str, Any], dataset[i])
+        texts.append(str(example['text']))
+        labels.append(int(example['label']))
+
+    return texts, labels
 
 
 def train_epoch(model, dataloader, optimizer, criterion, device):
@@ -144,14 +164,9 @@ def main():
     train_dataset, val_dataset = split_dataset(train_dataset, val_split=config['data']['val_split'])
     
     # Extract texts and labels
-    train_texts = [example['text'] for example in train_dataset]
-    train_labels = [example['label'] for example in train_dataset]
-    
-    val_texts = [example['text'] for example in val_dataset]
-    val_labels = [example['label'] for example in val_dataset]
-    
-    test_texts = [example['text'] for example in test_dataset]
-    test_labels = [example['label'] for example in test_dataset]
+    train_texts, train_labels = extract_texts_labels(train_dataset)
+    val_texts, val_labels = extract_texts_labels(val_dataset)
+    test_texts, test_labels = extract_texts_labels(test_dataset)
     
     print(f"\nData splits:")
     print(f"  Training: {len(train_texts)} samples")
